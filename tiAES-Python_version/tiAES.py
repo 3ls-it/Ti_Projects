@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # tiAES.py
-# (c) 2024 J. Adams jfa63@duck.com
+# (c) 2024 J. Adams jfa63[at]duck[dot]com
 # Released under the 2-clause BSD Licence
 # Thanks to jfx2006 for contributions and advice.
 
