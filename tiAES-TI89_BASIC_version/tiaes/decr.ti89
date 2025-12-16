@@ -1,6 +1,7 @@
 decr(w)
 Prgm
 (c) mat (key schedule = array w)
+(c)
 (c) Subroutine sections are labled with the FIPS 197
 (c) nomenclature.
 
