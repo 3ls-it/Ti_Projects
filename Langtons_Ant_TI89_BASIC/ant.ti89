@@ -1,7 +1,7 @@
 ant()
 Prgm
-'(c) Langton's Ant
-'(c) Cellular Automaton
+(c) Langton's Ant
+(c) Cellular Automaton
 
 Local i,yp,xp,yh,xh,dir
 
@@ -19,20 +19,20 @@ PxlOn yp,xp
 yp-1->yp
 
 While true
-  '(c) If on,
-  '(c) turn anti-clockwise
-  '(c) then set off
+  (c) If on,
+  (c) turn anti-clockwise
+  (c) then set off
   If pxlTest(yp,xp) Then
     PxlOff yp,xp
     mod(dir-1,4)->dir
   Else
-  '(c) Turn clockwise
-  '(c) set on
+  (c) Turn clockwise
+  (c) set on
     PxlOn yp,xp
     mod(dir+1,4)->dir
   EndIf
 
-  '(c) Move one cell
+  (c) Move one cell
   If dir=0 Then
     yp-1->yp
   ElseIf dir=1 Then
@@ -43,8 +43,8 @@ While true
     xp-1->xp
   EndIf
 
-  '(c) Allow screen
-  '(c) wrapping
+  (c) Allow screen
+  (c) wrapping
   If xp>xh Then
     0->xp
   ElseIf xp<0 Then
