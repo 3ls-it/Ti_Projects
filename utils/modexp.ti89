@@ -5,11 +5,15 @@ Func
 Local p
 
 If e=1 Then
+    (c) Base case b^1
+    (c) return b mod n
     Return mod(b,n)
 Else
     modexp(b,int(e/2),n)->p
+    (c) if e is even
     If mod(e,2)=0 Then
         Return mod(p^2,n)
+    (c) else e is odd
     Else
         Return mod(b*p^2,n)
     EndIf
