@@ -15,7 +15,10 @@ Local d,e,i,t
 
 If (a and 1) > 0
 	b->d
-shift(a,-1)->a (c) binary division by two
+
+(c) binary division by two
+shift(a,-1)->a
+
 For i,1,7
 	If (a and 1) > 0 Then
 		b->t

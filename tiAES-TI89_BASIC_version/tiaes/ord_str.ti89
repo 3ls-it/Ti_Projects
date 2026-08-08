@@ -5,7 +5,8 @@ Func
 
 Local r,c,cs,ch
 
-""->cs (c) empty cypher string
+(c) empty cypher string
+""->cs
 
 (c) load by column
 For c,1,4

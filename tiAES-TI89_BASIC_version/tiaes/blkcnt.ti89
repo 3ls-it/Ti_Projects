@@ -13,7 +13,7 @@ If t="STR" Then
 	If mod(l,n)=0
 		l/n->bc
 	If mod(l,n)!=0
-		int(l/n/+1->bc
+		int(l/n)+1->bc
 	Return bc
 EndIf
 
