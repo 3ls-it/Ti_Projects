@@ -75,7 +75,7 @@ start_screen(void)
 
     }
 
-    num = atol(buf);
+    num = atoi(buf);
     if (num <= 0 || num > 32767)
     {
         return 32767;
