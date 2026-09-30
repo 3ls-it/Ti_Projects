@@ -134,7 +134,7 @@ _main(void)
             xp -= 1;
         }
 
-        // Alow screeen wrapping
+        // Allow screeen wrapping
         if (xp > xh) 
         {
             xp = 0;
