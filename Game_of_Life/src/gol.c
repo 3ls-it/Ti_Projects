@@ -17,7 +17,11 @@
 #define WORLD_Y_MAX   (WORLD_HEIGHT - 1)
 #define MAX_CELLS 1000 // Testing
 
-#include <tigcclib.h>
+#include <graph.h>
+#include <kbd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "../include/gol_types.h"
 #include "../include/blinker.h"
@@ -104,7 +108,6 @@ void
 _main(void)
 {
     clrscr();
-    draw_border();
     start_screen();
     FontSetSys(F_4x6);
     printf_xy(5, 40, "(Press any key to continue)");

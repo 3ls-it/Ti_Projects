@@ -2,3 +2,6 @@
 __pycache__
 # Ignore Vi backup files
 .*.un~
+*.89*
+*.9xz
+*.v2z
