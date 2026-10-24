@@ -15,26 +15,39 @@
 #define WORLD_HEIGHT   99
 #define WORLD_X_MAX   (WORLD_WIDTH - 1)
 #define WORLD_Y_MAX   (WORLD_HEIGHT - 1)
-#define MAX_CELLS 1000 // Testing
+#define MAX_CELLS 2000
+#define DEFAULT_STEPS 240
 
+#include <args.h>
 #include <graph.h>
 #include <kbd.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+
 #include "../include/gol_types.h"
 #include "../include/blinker.h"
 #include "../include/gosper_glider_gun.h"
+#include "../include/max.h"
 
 static unsigned char world_a[WORLD_HEIGHT][WORLD_WIDTH];
 static unsigned char world_b[WORLD_HEIGHT][WORLD_WIDTH];
+
 static unsigned char neighbor_counts[WORLD_HEIGHT][WORLD_WIDTH];
-static Cell next_cells[MAX_CELLS];
-static Cell current_cells[MAX_CELLS];
+static unsigned char cells_overflowed;
+
+static Cell cells_a[MAX_CELLS];
+static Cell cells_b[MAX_CELLS];
+
+static Cell *current_cells = cells_a;
+static Cell *next_cells = cells_b;
+
 static unsigned short current_count;
 static unsigned short next_count;
-//static int next_cnt;
+static const Cell *selected_pattern;
+static unsigned short selected_pattern_count;
 
 
 
@@ -204,13 +217,11 @@ calculate_next_generation(
 {
     short x;
     short y;
-
     unsigned char neighbors;
-
     const unsigned char *row_current;
     unsigned char *row_next;
-
     next_count = 0;
+	cells_overflowed = 0;
 
     for (y = 1; y < WORLD_Y_MAX; ++y)
     {
@@ -232,6 +243,10 @@ calculate_next_generation(
                     next_cells[next_count].y = y;
                     ++next_count;
                 }
+				else
+				{
+					cells_overflowed = 1;
+				}
             }
             else
             {
@@ -240,45 +255,31 @@ calculate_next_generation(
         }
     }
 }
-#if 0
+
+
 static void
-calculate_next_generation(
-    const unsigned char current[][WORLD_WIDTH],
-    unsigned char next[][WORLD_WIDTH])
+select_pattern(void)
 {
-    short x;
-    short y;
-    unsigned char neighbors;
+    ESI argptr;
+    const char *name;
 
-    //const unsigned char *row_above;
-    const unsigned char *row_current;
-    //const unsigned char *row_below;
-    unsigned char *row_next;
+    /* Default pattern when no argument is supplied. */
+    selected_pattern = blinker;
+    selected_pattern_count = BLINKER_COUNT;
 
-    for (y = 1; y < WORLD_Y_MAX; ++y)
+    InitArgPtr(argptr);
+
+    if (GetArgType(argptr) != STR_TAG)
+        return;
+
+    name = GetStrnArg(argptr);
+
+    if (strcmp(name, "max") == 0)
     {
-        //row_above   = current[y - 1];
-        row_current = current[y];
-        //row_below   = current[y + 1];
-        row_next    = next[y];
-
-        for (x = 1; x < WORLD_X_MAX; ++x)
-        {
-			neighbors = neighbor_counts[y][x];
-
-            if (neighbors == 3 ||
-                (neighbors == 2 && row_current[x]))
-            {
-                row_next[x] = 1;
-            }
-			else
-			{
-				row_next[x] = 0;
-			}
-        }
+        selected_pattern = max;
+        selected_pattern_count = MAX_COUNT;
     }
 }
-#endif
 
 
 // Entry point
@@ -288,23 +289,41 @@ _main(void)
     unsigned char (*current_world)[WORLD_WIDTH];
     unsigned char (*next_world)[WORLD_WIDTH];
     unsigned char (*temp_world)[WORLD_WIDTH];
+	Cell *temp_cells;
 	unsigned short i;
-    short step;
+    unsigned short step;
 
     current_world = world_a;
     next_world = world_b;
-    current_count = GOSPER_GLIDER_GUN_COUNT;
 
-    for (i = 0; i < current_count; ++i)
-        current_cells[i] = gosper_glider_gun[i];
+	select_pattern();
 
-    load_pattern_to_world(current_world,
-                          gosper_glider_gun,
-                          GOSPER_GLIDER_GUN_COUNT);
+	if (selected_pattern_count > MAX_CELLS)
+	{
+		printf_xy(2, 2, "Pattern too large");
+		printf_xy(2, 10, "Limit: %u", MAX_CELLS);
+		ngetchx();
+		exit(0);
+	}
+
+	current_count = selected_pattern_count;
+
+	for (i = 0; i < current_count; ++i)
+		current_cells[i] = selected_pattern[i];
+
+    clrscr();
+    start_screen();
+    FontSetSys(F_4x6);
+    printf_xy(5, 40, "(Press any key to continue)");
+    ngetchx();
+
+	load_pattern_to_world(current_world,
+						  selected_pattern,
+						  selected_pattern_count);
 
     draw_world(current_world);
 
-	for (step = 0; step < 240; ++step)
+    for (step = 0; step < DEFAULT_STEPS; ++step)
 	{
 		build_neighbor_counts(current_cells,
 							  current_count);
@@ -312,9 +331,13 @@ _main(void)
 		calculate_next_generation(current_world,
 								   next_world);
 
-		for (i = 0; i < next_count; ++i)
-		    current_cells[i] = next_cells[i];
-
+		if (cells_overflowed)
+		{
+			printf_xy(2, 2, "Population limit exceeded");
+			printf_xy(2, 10, "Limit: %u", MAX_CELLS);
+			ngetchx();
+			exit(0);
+		}
 		current_count = next_count;
 
 		update_world_display(current_world, next_world);
@@ -322,51 +345,20 @@ _main(void)
 		temp_world = current_world;
 		current_world = next_world;
 		next_world = temp_world;
+
+    	temp_cells = current_cells;
+    	current_cells = next_cells;
+	    next_cells = temp_cells;
+
+        if (kbhit())
+        {
+            ngetchx();       /* Consume the key. */
+            break;           /* User requested stop. */
+        }
 	}
 
+	printf_xy(2, 2, "Stopped at: %u", step);
+	printf_xy(2, 2, "Live: %u  ", current_count);
 	ngetchx();
     exit(0);
-#if 0
-    clrscr();
-    start_screen();
-    FontSetSys(F_4x6);
-    printf_xy(5, 40, "(Press any key to continue)");
-    ngetchx();
-
-    load_pattern(blinker, BLINKER_COUNT);
-
-    int nsteps = 4;
-    int step = 1;
-    while (step <= nsteps)
-    {
-        unsigned int i = 0;
-        next_cnt = 0;
-
-        short x;
-        for (x=1; x < WORLD_X_MAX; x++)
-        {
-            short y;
-            for (y=1; y = WORLD_Y_MAX; y++)
-            {
-                short ncnt = pixel_count(x, y);
-                if ((ncnt == 3) || ((ncnt == 2) && GetPix(x, y)))
-                {
-                    next_cells[i].x = x;
-                    next_cells[i].y = y;
-                    next_cnt++; 
-                    ++i;
-                }
-            }
-        }
-        step++;
-		clrscr();
-        //draw_cells(next_cells, next_cnt); 
-        load_pattern_to_world(blinker, BLINKER_COUNT);
-        draw_world();
-    }
-
-    printf("\nDone");
-    ngetchx(); //Pause before clearing
-    exit(0);
-#endif
 }
