@@ -4,8 +4,8 @@
     ],
     "headerFiles": [
         "include/blinker.h",
-        "include/gol.h",
-        "include/gol_types.h"
+        "include/gol_types.h",
+        "include/gosper_glider_gun.h"
     ],
     "name": "Game_of_Life",
     "sourceFiles": [

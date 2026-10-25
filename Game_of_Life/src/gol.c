@@ -10,6 +10,8 @@
 #define SAVE_SCREEN
 #define MIN_AMS 100
 #define USE_TI89
+#define USE_TI92PLUS
+#define USE_V200
 
 #define WORLD_WIDTH   159
 #define WORLD_HEIGHT   99
