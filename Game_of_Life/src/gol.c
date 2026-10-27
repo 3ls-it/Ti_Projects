@@ -13,12 +13,12 @@
 #define USE_TI92PLUS
 #define USE_V200
 
-#define WORLD_WIDTH   159
-#define WORLD_HEIGHT   99
-#define WORLD_X_MAX   (WORLD_WIDTH - 1)
-#define WORLD_Y_MAX   (WORLD_HEIGHT - 1)
+#define WORLD_WIDTH 159
+#define WORLD_HEIGHT 99
+#define WORLD_X_MAX (WORLD_WIDTH - 1)
+#define WORLD_Y_MAX (WORLD_HEIGHT - 1)
 #define MAX_CELLS 2000
-#define DEFAULT_STEPS 240
+#define DEFAULT_STEPS 2400
 
 #include <args.h>
 #include <graph.h>
@@ -28,11 +28,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+// Pattern definitions
 #include "../include/gol_types.h"
 #include "../include/blinker.h"
 #include "../include/gosper_glider_gun.h"
 #include "../include/max.h"
+#include "../include/10-engine_corder_ship.h"
+#include "../include/p80_gliderless_hwss.h"
+#include "../include/wing_spaceship.h"
+#include "../include/p43_gliderloop.h"
+
 
 static unsigned char world_a[WORLD_HEIGHT][WORLD_WIDTH];
 static unsigned char world_b[WORLD_HEIGHT][WORLD_WIDTH];
@@ -50,6 +55,7 @@ static unsigned short current_count;
 static unsigned short next_count;
 static const Cell *selected_pattern;
 static unsigned short selected_pattern_count;
+static unsigned char *display_name;
 
 
 
@@ -259,6 +265,7 @@ calculate_next_generation(
 }
 
 
+// Load pattern given as arg
 static void
 select_pattern(void)
 {
@@ -268,18 +275,51 @@ select_pattern(void)
     /* Default pattern when no argument is supplied. */
     selected_pattern = blinker;
     selected_pattern_count = BLINKER_COUNT;
+	display_name = "Blinker";
 
     InitArgPtr(argptr);
 
     if (GetArgType(argptr) != STR_TAG)
         return;
 
+	/* Register available patterns */
     name = GetStrnArg(argptr);
 
     if (strcmp(name, "max") == 0)
     {
         selected_pattern = max;
         selected_pattern_count = MAX_COUNT;
+		display_name = "Max";
+    }
+	else if (strcmp(name, "gosper_glider_gun") == 0)
+    {
+        selected_pattern = gosper_glider_gun;
+        selected_pattern_count = GOSPER_GLIDER_GUN_COUNT;
+		display_name = "Gosper Glider Gun";
+    }
+	else if (strcmp(name, "10engine_corder_ship") == 0)
+    {
+        selected_pattern = _10_engine_corder_ship;
+        selected_pattern_count = _10_ENGINE_CORDER_SHIP_COUNT;
+		display_name = "10 Engine Corder Ship";
+    }
+	else if (strcmp(name, "p80_gliderless_hwss") == 0)
+    {
+        selected_pattern = p80_gliderless_hwss;
+        selected_pattern_count =P80_GLIDERLESS_HWSS_COUNT;
+		display_name = "P80 Gliderless HWSS Gun";
+    }
+	else if (strcmp(name, "wing_spaceship") == 0)
+    {
+        selected_pattern = wing_spaceship;
+        selected_pattern_count = WING_SPACESHIP_COUNT;
+		display_name = "Wing Spaceship";
+    }
+	else if (strcmp(name, "snark_loop") == 0)
+    {
+        selected_pattern = snark_loop;
+        selected_pattern_count = SNARK_LOOP_COUNT;
+		display_name = "Snark Loop, period 43";
     }
 }
 
@@ -315,8 +355,11 @@ _main(void)
 
     clrscr();
     start_screen();
+	FontSetSys(F_6x8);
+	printf_xy(5, 40, "Pattern:");
+	printf_xy(5, 50, display_name);
     FontSetSys(F_4x6);
-    printf_xy(5, 40, "(Press any key to continue)");
+    printf_xy(5, 80, "(Press any key to continue)");
     ngetchx();
 
 	load_pattern_to_world(current_world,
