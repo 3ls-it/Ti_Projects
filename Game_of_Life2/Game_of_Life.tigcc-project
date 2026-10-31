@@ -1,0 +1,14 @@
+{
+    "formatVersion": 1,
+    "gasFiles": [
+    ],
+    "headerFiles": [
+        "include/blinker.h",
+        "include/gol_types.h",
+        "include/gosper_glider_gun.h"
+    ],
+    "name": "Game_of_Life",
+    "sourceFiles": [
+        "src/gol.c"
+    ]
+}
