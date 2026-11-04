@@ -10,15 +10,14 @@
 #define SAVE_SCREEN
 #define MIN_AMS 100
 #define USE_TI89
-#define USE_TI92PLUS
-#define USE_V200
+//#define USE_TI92PLUS
+//#define USE_V200
 
 #define WORLD_WIDTH 159
 #define WORLD_HEIGHT 99
 #define WORLD_X_MAX (WORLD_WIDTH - 1)
 #define WORLD_Y_MAX (WORLD_HEIGHT - 1)
 #define MAX_CELLS 2000
-#define DEFAULT_STEPS 2400
 
 #include <args.h>
 #include <graph.h>
@@ -78,16 +77,6 @@ start_screen(void)
 }
 
 
-// A small wraper for GetPix()
-short
-pn(short x, short y)
-{
-    if (GetPix(x, y))
-        return 1;
-    return 0;
-}
-
-
 // Load a pattern to the "World"
 static void
 load_pattern_to_world_cells(const Cell *pattern,
@@ -106,45 +95,24 @@ load_pattern_to_world_cells(const Cell *pattern,
 
 // Draw the world at current generation
 static void
-draw_world(const unsigned char buffer[][WORLD_WIDTH])
+draw_world()
 {
-    short x;
-    short y;
-
-    clrscr();
-
-    for (y = 0; y < WORLD_HEIGHT; ++y)
-    {
-        for (x = 0; x < WORLD_WIDTH; ++x)
-        {
-            if (buffer[y][x])
-                DrawPix(x, y, A_NORMAL);
-        }
-    }
 }
 
 
 static void
-update_world_display(
-    const unsigned char current[][WORLD_WIDTH],
-    const unsigned char next[][WORLD_WIDTH])
+update_world_display()
 {
-    short x;
-    short y;
+}
 
-    for (y = 0; y < WORLD_HEIGHT; ++y)
-    {
-        for (x = 0; x < WORLD_WIDTH; ++x)
-        {
-            if (current[y][x] != next[y][x])
-            {
-                if (next[y][x])
-                    DrawPix(x, y, A_NORMAL);
-                else
-                    DrawPix(x, y, A_REVERSE);
-            }
-        }
-    }
+
+// A small wraper for GetPix()
+short
+pn(short x, short y)
+{
+    if (GetPix(x, y))
+        return 1;
+    return 0;
 }
 
 
@@ -185,53 +153,10 @@ draw_cells(const Cell *cells, unsigned short count)
         DrawPix(cells[i].x, cells[i].y, A_NORMAL);
 }
 
-#if 0
 static void
-calculate_next_generation(
-    const unsigned char current[][WORLD_WIDTH],
-    unsigned char next[][WORLD_WIDTH])
+calculate_next_generation()
 {
-    short x;
-    short y;
-    unsigned char neighbors;
-    const unsigned char *row_current;
-    unsigned char *row_next;
-    next_count = 0;
-	cells_overflowed = 0;
-
-    for (y = 1; y < WORLD_Y_MAX; ++y)
-    {
-        row_current = current[y];
-        row_next = next[y];
-
-        for (x = 1; x < WORLD_X_MAX; ++x)
-        {
-            neighbors = neighbor_counts[y][x];
-
-            if (neighbors == 3 ||
-                (neighbors == 2 && row_current[x]))
-            {
-                row_next[x] = 1;
-
-                if (next_count < MAX_CELLS)
-                {
-                    next_cells[next_count].x = x;
-                    next_cells[next_count].y = y;
-                    ++next_count;
-                }
-				else
-				{
-					cells_overflowed = 1;
-				}
-            }
-            else
-            {
-                row_next[x] = 0;
-            }
-        }
-    }
 }
-#endif
 
 // Load pattern given as arg
 static void
@@ -290,6 +215,7 @@ select_pattern(void)
 		display_name = "Snark Loop, period 43";
     }
 }
+
 
 
 // Entry point
