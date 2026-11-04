@@ -1,0 +1,12 @@
+{
+    "formatVersion": 1,
+    "gasFiles": [
+    ],
+    "headerFiles": [
+        "include/gol_types.h"
+    ],
+    "name": "Game_of_Life2",
+    "sourceFiles": [
+        "src/gol2.c"
+    ]
+}

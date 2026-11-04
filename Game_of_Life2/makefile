@@ -6,7 +6,7 @@ RM      = rm -f
 default: life
 
 life:
-	$(CC) -v -o life src/gol.c
+	$(CC) -v -o life2 src/gol2.c
 
 clean:
-	$(RM) life.89z life.9xz life.v2z
+	$(RM) life2.89z life2.9xz life2.v2z

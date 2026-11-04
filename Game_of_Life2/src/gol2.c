@@ -1,5 +1,5 @@
 /*
-* @file    src/gol.c
+* @file    src/gol2.c
 * @brief   John Conway's Game of Life cellular automata
 *
 * Copyright (c) 2026 J Adams <jfa63@duck.com>
@@ -39,20 +39,16 @@
 #include "../include/p43_gliderloop.h"
 
 
-static unsigned char world_a[WORLD_HEIGHT][WORLD_WIDTH];
-static unsigned char world_b[WORLD_HEIGHT][WORLD_WIDTH];
+static WorldCell cells_a[MAX_CELLS];
+static WorldCell cells_b[MAX_CELLS];
 
-static unsigned char neighbor_counts[WORLD_HEIGHT][WORLD_WIDTH];
+static WorldCell *current_cells = cells_a;
+static WorldCell *next_cells = cells_b;
+
 static unsigned char cells_overflowed;
-
-static Cell cells_a[MAX_CELLS];
-static Cell cells_b[MAX_CELLS];
-
-static Cell *current_cells = cells_a;
-static Cell *next_cells = cells_b;
-
 static unsigned short current_count;
 static unsigned short next_count;
+
 static const Cell *selected_pattern;
 static unsigned short selected_pattern_count;
 static unsigned char *display_name;
@@ -92,47 +88,19 @@ pn(short x, short y)
 }
 
 
-static void
-add_neighbor_counts(short x, short y)
-{
-    neighbor_counts[y - 1][x - 1]++;
-    neighbor_counts[y - 1][x]++;
-    neighbor_counts[y - 1][x + 1]++;
-
-    neighbor_counts[y][x - 1]++;
-    neighbor_counts[y][x + 1]++;
-
-    neighbor_counts[y + 1][x - 1]++;
-    neighbor_counts[y + 1][x]++;
-    neighbor_counts[y + 1][x + 1]++;
-}
-
-
-static void
-build_neighbor_counts(const Cell *cells,
-                      unsigned short count)
-{
-    unsigned short i;
-
-    memset(neighbor_counts, 0, sizeof neighbor_counts);
-
-    for (i = 0; i < count; ++i)
-        add_neighbor_counts(cells[i].x, cells[i].y);
-}
-
-
 // Load a pattern to the "World"
 static void
-load_pattern_to_world(unsigned char buffer[][WORLD_WIDTH],
-                      const Cell *cells,
-                      unsigned short count)
+load_pattern_to_world_cells(const Cell *pattern,
+                            unsigned short pattern_count,
+                            WorldCell *cells)
 {
     unsigned short i;
 
-    memset(buffer, 0, sizeof world_a);
-
-    for (i = 0; i < count; ++i)
-        buffer[cells[i].y][cells[i].x] = 1;
+    for (i = 0; i < pattern_count; ++i)
+    {
+        cells[i].x = (long)pattern[i].x;
+        cells[i].y = (long)pattern[i].y;
+    }
 }
 
 
@@ -217,7 +185,7 @@ draw_cells(const Cell *cells, unsigned short count)
         DrawPix(cells[i].x, cells[i].y, A_NORMAL);
 }
 
-
+#if 0
 static void
 calculate_next_generation(
     const unsigned char current[][WORLD_WIDTH],
@@ -263,7 +231,7 @@ calculate_next_generation(
         }
     }
 }
-
+#endif
 
 // Load pattern given as arg
 static void
@@ -328,82 +296,26 @@ select_pattern(void)
 void
 _main(void)
 {
-    unsigned char (*current_world)[WORLD_WIDTH];
-    unsigned char (*next_world)[WORLD_WIDTH];
-    unsigned char (*temp_world)[WORLD_WIDTH];
-	Cell *temp_cells;
-	unsigned short i;
-    unsigned short step;
+    select_pattern();
 
-    current_world = world_a;
-    next_world = world_b;
+    if (selected_pattern_count > MAX_CELLS)
+    {
+        printf_xy(2, 2, "Pattern too large");
+        ngetchx();
+        exit(0);
+    }
 
-	select_pattern();
+    load_pattern_to_world_cells(selected_pattern,
+                                selected_pattern_count,
+                                current_cells);
 
-	if (selected_pattern_count > MAX_CELLS)
-	{
-		printf_xy(2, 2, "Pattern too large");
-		printf_xy(2, 10, "Limit: %u", MAX_CELLS);
-		ngetchx();
-		exit(0);
-	}
+    current_count = selected_pattern_count;
 
-	current_count = selected_pattern_count;
+	clrscr();
+    printf_xy(2, 2, "Cells: %u", current_count);
+    printf_xy(2, 12, "X: %ld", current_cells[0].x);
+    printf_xy(2, 22, "Y: %ld", current_cells[0].y);
 
-	for (i = 0; i < current_count; ++i)
-		current_cells[i] = selected_pattern[i];
-
-    clrscr();
-    start_screen();
-	FontSetSys(F_6x8);
-	printf_xy(5, 40, "Pattern:");
-	printf_xy(5, 50, display_name);
-    FontSetSys(F_4x6);
-    printf_xy(5, 80, "(Press any key to continue)");
     ngetchx();
-
-	load_pattern_to_world(current_world,
-						  selected_pattern,
-						  selected_pattern_count);
-
-    draw_world(current_world);
-
-    for (step = 0; step < DEFAULT_STEPS; ++step)
-	{
-		build_neighbor_counts(current_cells,
-							  current_count);
-
-		calculate_next_generation(current_world,
-								   next_world);
-
-		if (cells_overflowed)
-		{
-			printf_xy(2, 2, "Population limit exceeded");
-			printf_xy(2, 10, "Limit: %u", MAX_CELLS);
-			ngetchx();
-			exit(0);
-		}
-		current_count = next_count;
-
-		update_world_display(current_world, next_world);
-
-		temp_world = current_world;
-		current_world = next_world;
-		next_world = temp_world;
-
-    	temp_cells = current_cells;
-    	current_cells = next_cells;
-	    next_cells = temp_cells;
-
-        if (kbhit())
-        {
-            ngetchx();       /* Consume the key. */
-            break;           /* User requested stop. */
-        }
-	}
-
-	printf_xy(2, 2, "Stopped at: %u", step);
-	printf_xy(2, 2, "Live: %u  ", current_count);
-	ngetchx();
     exit(0);
 }
