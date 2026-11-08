@@ -20,6 +20,7 @@
 #define MAX_CELLS 2000
 
 #include <args.h>
+#include <estack.h>
 #include <graph.h>
 #include <kbd.h>
 #include <stdbool.h>
@@ -41,6 +42,8 @@
 static WorldCell cells_a[MAX_CELLS];
 static WorldCell cells_b[MAX_CELLS];
 
+static unsigned char candidate_counts[MAX_CELLS];
+
 static WorldCell *current_cells = cells_a;
 static WorldCell *next_cells = cells_b;
 
@@ -51,6 +54,10 @@ static unsigned short next_count;
 static const Cell *selected_pattern;
 static unsigned short selected_pattern_count;
 static unsigned char *display_name;
+static unsigned short gens = 4;
+
+#define NEIGHBOR_COUNT_MASK  0x0F
+#define CURRENTLY_ALIVE_FLAG 0x80
 
 
 
@@ -67,6 +74,7 @@ draw_border(void)
 }
 
 
+// Display Start screen
 void
 start_screen(void)
 {
@@ -95,8 +103,26 @@ load_pattern_to_world_cells(const Cell *pattern,
 
 // Draw the world at current generation
 static void
-draw_world()
+draw_world(const WorldCell *cells,
+           unsigned short count)
 {
+    unsigned short i;
+    long x;
+    long y;
+
+    clrscr();
+
+    for (i = 0; i < count; ++i)
+    {
+        x = cells[i].x;
+        y = cells[i].y;
+
+        if (x >= 0 && x <= WORLD_X_MAX &&
+            y >= 0 && y <= WORLD_Y_MAX)
+        {
+            DrawPix((short)x, (short)y, A_NORMAL);
+        }
+    }
 }
 
 
@@ -106,6 +132,7 @@ update_world_display()
 }
 
 
+#if 0
 // A small wraper for GetPix()
 short
 pn(short x, short y)
@@ -114,6 +141,7 @@ pn(short x, short y)
         return 1;
     return 0;
 }
+#endif
 
 
 // Count neighbors
@@ -121,14 +149,14 @@ short
 pixel_count(short x, short y)
 {
     short cnt = \
-        pn(x-1, y-1) + \
-        pn(x, y-1) + \
-        pn(x+1, y-1) + \
-        pn(x-1, y) + \
-        pn(x+1, y) + \
-        pn(x-1, y+1) + \
-        pn(x, y+1) + \
-        pn(x+1, y+1);
+        GetPix(x-1, y-1) + \
+        GetPix(x, y-1) + \
+        GetPix(x+1, y-1) + \
+        GetPix(x-1, y) + \
+        GetPix(x+1, y) + \
+        GetPix(x-1, y+1) + \
+        GetPix(x, y+1) + \
+        GetPix(x+1, y+1);
     return cnt;
 }
 
@@ -153,10 +181,172 @@ draw_cells(const Cell *cells, unsigned short count)
         DrawPix(cells[i].x, cells[i].y, A_NORMAL);
 }
 
-static void
-calculate_next_generation()
+
+static short
+find_candidate(long x, long y)
 {
+    unsigned short i;
+
+    for (i = 0; i < next_count; ++i)
+    {
+        if (next_cells[i].x == x &&
+            next_cells[i].y == y)
+        {
+            return (short)i;
+        }
+    }
+
+    return -1;
 }
+
+
+static short
+ensure_candidate(long x, long y)
+{
+    short index;
+
+    index = find_candidate(x, y);
+
+    if (index >= 0)
+        return index;
+
+    if (next_count >= MAX_CELLS)
+    {
+        cells_overflowed = 1;
+        return -1;
+    }
+
+    next_cells[next_count].x = x;
+    next_cells[next_count].y = y;
+    candidate_counts[next_count] = 0;
+
+    ++next_count;
+
+    return (short)(next_count - 1);
+}
+
+
+static void
+mark_current_cell(long x,
+                  long y)
+{
+    short index;
+
+    index = ensure_candidate(x, y);
+
+    if (index >= 0)
+        candidate_counts[index] |= CURRENTLY_ALIVE_FLAG;
+}
+
+
+static void
+add_neighbor(long x, long y)
+{
+    short index;
+
+    index = ensure_candidate(x, y);
+
+    if (index >= 0)
+		candidate_counts[index] =
+			(candidate_counts[index] & CURRENTLY_ALIVE_FLAG) |
+			((candidate_counts[index] & NEIGHBOR_COUNT_MASK) + 1);
+}
+
+
+// Temportary linear search for
+// a simple correctness baseline.
+static unsigned char
+is_currently_alive(long x, long y)
+{
+    unsigned short i;
+
+    for (i = 0; i < current_count; ++i)
+    {
+        if (current_cells[i].x == x &&
+            current_cells[i].y == y)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+static void
+calculate_next_generation(void)
+{
+    unsigned short i;
+    unsigned short candidate_count;
+    short dx;
+    short dy;
+    long x;
+    long y;
+
+	unsigned char count;
+	unsigned char alive;
+
+    next_count = 0;
+    cells_overflowed = 0;
+
+    /*
+     * Build the candidate list and neighbor counts.
+     */
+    for (i = 0; i < current_count; ++i)
+    {
+        x = current_cells[i].x;
+        y = current_cells[i].y;
+
+		/*
+		 * The live cell itself is a candidate, but does not
+		 * contribute to its own neighbor count.
+		 */
+		mark_current_cell(x, y);
+
+		for (dy = -1; dy <= 1; ++dy)
+		{
+			for (dx = -1; dx <= 1; ++dx)
+			{
+				if (dx != 0 || dy != 0)
+					add_neighbor(x + dx, y + dy);
+			}
+		}
+
+    }
+
+    if (cells_overflowed)
+        return;
+
+    /*
+     * Save the number of candidates before compacting
+     * next_cells[] in place.
+     */
+    candidate_count = next_count;
+    next_count = 0;
+
+    /*
+     * Apply the Life rules and compact the survivors/births
+     * into the beginning of next_cells[].
+     */
+
+	for (i = 0; i < candidate_count; ++i)
+	{
+		x = next_cells[i].x;
+		y = next_cells[i].y;
+
+		count = candidate_counts[i] & NEIGHBOR_COUNT_MASK;
+		alive = candidate_counts[i] & CURRENTLY_ALIVE_FLAG;
+
+		if (count == 3 ||
+			(count == 2 && alive))
+		{
+			next_cells[next_count].x = x;
+			next_cells[next_count].y = y;
+			++next_count;
+		}
+	}
+}
+
 
 // Load pattern given as arg
 static void
@@ -231,17 +421,50 @@ _main(void)
         exit(0);
     }
 
-    load_pattern_to_world_cells(selected_pattern,
+    clrscr();
+    start_screen();
+    FontSetSys(F_6x8);
+    printf_xy(5, 40, "Pattern:");
+    printf_xy(5, 50, display_name);
+    FontSetSys(F_4x6);
+    printf_xy(5, 80, "(Press any key to continue)");
+    ngetchx();
+
+	load_pattern_to_world_cells(selected_pattern,
                                 selected_pattern_count,
                                 current_cells);
 
-    current_count = selected_pattern_count;
+	current_count = selected_pattern_count;
 
-	clrscr();
-    printf_xy(2, 2, "Cells: %u", current_count);
-    printf_xy(2, 12, "X: %ld", current_cells[0].x);
-    printf_xy(2, 22, "Y: %ld", current_cells[0].y);
+	draw_world(current_cells, current_count);
 
-    ngetchx();
-    exit(0);
+	{
+		WorldCell *temp_cells;
+		unsigned short step;
+
+		for (step = 0; step < gens; ++step)
+		{
+			calculate_next_generation();
+
+			if (cells_overflowed)
+			{
+				printf_xy(2, 2, "Candidate limit exceeded");
+				ngetchx();
+				exit(0);
+			}
+
+			draw_world(next_cells, next_count);
+
+			current_count = next_count;
+
+			temp_cells = current_cells;
+			current_cells = next_cells;
+			next_cells = temp_cells;
+
+			//printf_xy(2, 2, "step %d", step);
+		}
+	}
+	printf_xy(2, 2, "Done");
+	ngetchx();
+	exit(0);
 }
