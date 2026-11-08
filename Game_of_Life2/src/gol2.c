@@ -132,18 +132,6 @@ update_world_display()
 }
 
 
-#if 0
-// A small wraper for GetPix()
-short
-pn(short x, short y)
-{
-    if (GetPix(x, y))
-        return 1;
-    return 0;
-}
-#endif
-
-
 // Count neighbors
 short
 pixel_count(short x, short y)
@@ -460,8 +448,6 @@ _main(void)
 			temp_cells = current_cells;
 			current_cells = next_cells;
 			next_cells = temp_cells;
-
-			//printf_xy(2, 2, "step %d", step);
 		}
 	}
 	printf_xy(2, 2, "Done");
