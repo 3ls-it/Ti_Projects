@@ -18,6 +18,10 @@
 #define WORLD_X_MAX (WORLD_WIDTH - 1)
 #define WORLD_Y_MAX (WORLD_HEIGHT - 1)
 #define MAX_CELLS 2000
+#define NEIGHBOR_COUNT_MASK  0x0F
+#define CURRENTLY_ALIVE_FLAG 0x80
+#define HASH_SIZE 4096
+#define HASH_MASK (HASH_SIZE - 1)
 
 #include <args.h>
 #include <estack.h>
@@ -44,6 +48,7 @@ static WorldCell cells_b[MAX_CELLS];
 
 static unsigned char candidate_counts[MAX_CELLS];
 static unsigned short last_candidate_count;
+static unsigned short candidate_slots[HASH_SIZE];
 
 static WorldCell *current_cells = cells_a;
 static WorldCell *next_cells = cells_b;
@@ -56,9 +61,6 @@ static const Cell *selected_pattern;
 static unsigned short selected_pattern_count;
 static unsigned char *display_name;
 static unsigned short gens;
-
-#define NEIGHBOR_COUNT_MASK  0x0F
-#define CURRENTLY_ALIVE_FLAG 0x80
 
 
 
@@ -86,7 +88,7 @@ start_screen(void)
 }
 
 
-// Load a pattern to the "World"
+// Load a pattern to the World
 static void
 load_pattern_to_world_cells(const Cell *pattern,
                             unsigned short pattern_count,
@@ -127,6 +129,7 @@ draw_world(const WorldCell *cells,
 }
 
 
+#if 0
 static void
 update_world_display()
 {
@@ -147,6 +150,32 @@ pixel_count(short x, short y)
         GetPix(x, y+1) + \
         GetPix(x+1, y+1);
     return cnt;
+}
+#endif
+
+
+static unsigned short
+hash_coordinate(long x, long y)
+{
+    unsigned long h;
+
+    h = (unsigned long)x;
+    h ^= (unsigned long)y
+         + 0x9e3779b9UL
+         + (h << 6)
+         + (h >> 2);
+
+    return (unsigned short)(h & HASH_MASK);
+}
+
+
+static void
+clear_candidate_hash(void)
+{
+    unsigned short i;
+
+    for (i = 0; i < HASH_SIZE; ++i)
+        candidate_slots[i] = 0;
 }
 
 
@@ -174,6 +203,44 @@ draw_cells(const Cell *cells, unsigned short count)
 static short
 find_candidate(long x, long y)
 {
+    unsigned short slot;
+    unsigned short stored;
+    short index;
+
+    slot = hash_coordinate(x, y);
+
+    for (;;)
+    {
+        stored = candidate_slots[slot];
+
+        /*
+         * Zero means that this hash slot has not been used.
+         * Therefore, the coordinate is not present.
+         */
+        if (stored == 0)
+            return -1;
+
+        /*
+         * Stored values are candidate_index + 1.
+         */
+        index = (short)(stored - 1);
+
+        if (next_cells[index].x == x &&
+            next_cells[index].y == y)
+        {
+            return index;
+        }
+
+        /*
+         * Linear probing.
+         */
+        slot = (unsigned short)((slot + 1) & HASH_MASK);
+    }
+}
+#if 0
+static short
+find_candidate(long x, long y)
+{
     unsigned short i;
 
     for (i = 0; i < next_count; ++i)
@@ -187,8 +254,49 @@ find_candidate(long x, long y)
 
     return -1;
 }
+#endif
 
 
+static short
+ensure_candidate(long x, long y)
+{
+    unsigned short slot;
+    short index;
+
+    index = find_candidate(x, y);
+
+    if (index >= 0)
+        return index;
+
+    if (next_count >= MAX_CELLS)
+    {
+        cells_overflowed = 1;
+        return -1;
+    }
+
+    /*
+     * Find an empty hash slot for the new coordinate.
+     */
+    slot = hash_coordinate(x, y);
+
+    while (candidate_slots[slot] != 0)
+        slot = (unsigned short)((slot + 1) & HASH_MASK);
+
+    next_cells[next_count].x = x;
+    next_cells[next_count].y = y;
+    candidate_counts[next_count] = 0;
+
+    /*
+     * Store candidate index + 1 because zero means empty.
+     */
+    candidate_slots[slot] =
+        (unsigned short)(next_count + 1);
+
+    ++next_count;
+
+    return (short)(next_count - 1);
+}
+#if 0
 static short
 ensure_candidate(long x, long y)
 {
@@ -213,6 +321,7 @@ ensure_candidate(long x, long y)
 
     return (short)(next_count - 1);
 }
+#endif
 
 
 static void
@@ -274,6 +383,8 @@ calculate_next_generation(void)
 
 	unsigned char count;
 	unsigned char alive;
+
+    clear_candidate_hash();
 
     next_count = 0;
     cells_overflowed = 0;
@@ -403,19 +514,22 @@ void
 _main(void)
 {
     select_pattern();
+    gens = 64;
 
+	/* Testing constraints
     if (strcmp(display_name, "Snark Loop") == 0)
 	{
 		gens = 4;
 	}
 	else if (strcmp(display_name, "Gosper Glider Gun") == 0)
     {
-		gens = 128;
+		gens = 64;
 	}
 	else
 	{
-		gens = 8;
+		gens = 16;
 	}
+	*/
 
     if (selected_pattern_count > MAX_CELLS)
     {
