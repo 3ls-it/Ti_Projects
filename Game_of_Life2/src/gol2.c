@@ -260,7 +260,6 @@ mark_current_cell(long x,
                   long y)
 {
     short index;
-
     index = ensure_candidate(x, y);
 
     if (index >= 0)
@@ -272,33 +271,12 @@ static void
 add_neighbor(long x, long y)
 {
     short index;
-
     index = ensure_candidate(x, y);
 
     if (index >= 0)
 		candidate_counts[index] =
 			(candidate_counts[index] & CURRENTLY_ALIVE_FLAG) |
 			((candidate_counts[index] & NEIGHBOR_COUNT_MASK) + 1);
-}
-
-
-// Temportary linear search for
-// a simple correctness baseline.
-static unsigned char
-is_currently_alive(long x, long y)
-{
-    unsigned short i;
-
-    for (i = 0; i < current_count; ++i)
-    {
-        if (current_cells[i].x == x &&
-            current_cells[i].y == y)
-        {
-            return 1;
-        }
-    }
-
-    return 0;
 }
 
 
@@ -421,7 +399,7 @@ select_pattern(void)
 	else if (strcmp(name, "p80_gliderless_hwss") == 0)
     {
         selected_pattern = p80_gliderless_hwss;
-        selected_pattern_count =P80_GLIDERLESS_HWSS_COUNT;
+        selected_pattern_count = P80_GLIDERLESS_HWSS_COUNT;
 		display_name = "P80 Gliderless HWSS Gun";
     }
 	else if (strcmp(name, "wing_spaceship") == 0)
@@ -486,6 +464,8 @@ _main(void)
 			if (cells_overflowed)
 			{
 				printf_xy(2, 2, "Candidate limit exceeded");
+				printf_xy(2, 12, "Gen: %u", step);
+
 				ngetchx();
 				exit(0);
 			}
@@ -508,6 +488,7 @@ _main(void)
 		}
 	}
     DrawStr(2, 2, "Done", A_REPLACE);
+	printf_xy(2, 12, "Gen: %u", gens);
 	ngetchx();
 	exit(0);
 }
