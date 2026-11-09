@@ -129,31 +129,6 @@ draw_world(const WorldCell *cells,
 }
 
 
-#if 0
-static void
-update_world_display()
-{
-}
-
-
-// Count neighbours
-short
-pixel_count(short x, short y)
-{
-    short cnt = \
-        GetPix(x-1, y-1) + \
-        GetPix(x, y-1) + \
-        GetPix(x+1, y-1) + \
-        GetPix(x-1, y) + \
-        GetPix(x+1, y) + \
-        GetPix(x-1, y+1) + \
-        GetPix(x, y+1) + \
-        GetPix(x+1, y+1);
-    return cnt;
-}
-#endif
-
-
 static unsigned short
 hash_coordinate(long x, long y)
 {
@@ -237,24 +212,6 @@ find_candidate(long x, long y)
         slot = (unsigned short)((slot + 1) & HASH_MASK);
     }
 }
-#if 0
-static short
-find_candidate(long x, long y)
-{
-    unsigned short i;
-
-    for (i = 0; i < next_count; ++i)
-    {
-        if (next_cells[i].x == x &&
-            next_cells[i].y == y)
-        {
-            return (short)i;
-        }
-    }
-
-    return -1;
-}
-#endif
 
 
 static short
@@ -296,32 +253,6 @@ ensure_candidate(long x, long y)
 
     return (short)(next_count - 1);
 }
-#if 0
-static short
-ensure_candidate(long x, long y)
-{
-    short index;
-
-    index = find_candidate(x, y);
-
-    if (index >= 0)
-        return index;
-
-    if (next_count >= MAX_CELLS)
-    {
-        cells_overflowed = 1;
-        return -1;
-    }
-
-    next_cells[next_count].x = x;
-    next_cells[next_count].y = y;
-    candidate_counts[next_count] = 0;
-
-    ++next_count;
-
-    return (short)(next_count - 1);
-}
-#endif
 
 
 static void
@@ -514,22 +445,7 @@ void
 _main(void)
 {
     select_pattern();
-    gens = 64;
-
-	/* Testing constraints
-    if (strcmp(display_name, "Snark Loop") == 0)
-	{
-		gens = 4;
-	}
-	else if (strcmp(display_name, "Gosper Glider Gun") == 0)
-    {
-		gens = 64;
-	}
-	else
-	{
-		gens = 16;
-	}
-	*/
+    gens = 128;
 
     if (selected_pattern_count > MAX_CELLS)
     {
