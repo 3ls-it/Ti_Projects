@@ -43,6 +43,7 @@ static WorldCell cells_a[MAX_CELLS];
 static WorldCell cells_b[MAX_CELLS];
 
 static unsigned char candidate_counts[MAX_CELLS];
+static unsigned short last_candidate_count;
 
 static WorldCell *current_cells = cells_a;
 static WorldCell *next_cells = cells_b;
@@ -54,7 +55,7 @@ static unsigned short next_count;
 static const Cell *selected_pattern;
 static unsigned short selected_pattern_count;
 static unsigned char *display_name;
-static unsigned short gens = 4;
+static unsigned short gens;
 
 #define NEIGHBOR_COUNT_MASK  0x0F
 #define CURRENTLY_ALIVE_FLAG 0x80
@@ -132,7 +133,7 @@ update_world_display()
 }
 
 
-// Count neighbors
+// Count neighbours
 short
 pixel_count(short x, short y)
 {
@@ -310,6 +311,7 @@ calculate_next_generation(void)
      * next_cells[] in place.
      */
     candidate_count = next_count;
+    last_candidate_count = candidate_count;
     next_count = 0;
 
     /*
@@ -390,7 +392,7 @@ select_pattern(void)
     {
         selected_pattern = snark_loop;
         selected_pattern_count = SNARK_LOOP_COUNT;
-		display_name = "Snark Loop, period 43";
+		display_name = "Snark Loop";
     }
 }
 
@@ -401,6 +403,19 @@ void
 _main(void)
 {
     select_pattern();
+
+    if (strcmp(display_name, "Snark Loop") == 0)
+	{
+		gens = 4;
+	}
+	else if (strcmp(display_name, "Gosper Glider Gun") == 0)
+    {
+		gens = 128;
+	}
+	else
+	{
+		gens = 8;
+	}
 
     if (selected_pattern_count > MAX_CELLS)
     {
@@ -432,6 +447,10 @@ _main(void)
 
 		for (step = 0; step < gens; ++step)
 		{
+			unsigned short live_before;
+			unsigned short live_after;
+			live_before = current_count;
+
 			calculate_next_generation();
 
 			if (cells_overflowed)
@@ -441,8 +460,16 @@ _main(void)
 				exit(0);
 			}
 
+			live_after = next_count;
 			draw_world(next_cells, next_count);
-
+#if 0
+			printf_xy(2, 2, "Live bef: %u  ", current_count);
+			printf_xy(2, 12, "#Cands: %u  ", last_candidate_count);
+			printf_xy(2, 22, "Live aft:  %u   ", live_after);
+			printf_xy(150, 2, "%u", step + 1);
+			ngetchx();
+#endif
+			//draw_world(next_cells, next_count);
 			current_count = next_count;
 
 			temp_cells = current_cells;
@@ -450,7 +477,7 @@ _main(void)
 			next_cells = temp_cells;
 		}
 	}
-	printf_xy(2, 2, "Done");
+    DrawStr(2, 2, "Done", A_REPLACE);
 	ngetchx();
 	exit(0);
 }
