@@ -5,10 +5,10 @@
     "gasFiles": [
     ],
     "headerFiles": [
-        "include/class_types.h"
+        "include/rule_types.h"
     ],
-    "name": "Wolfram_Classes",
+    "name": "Wolfram_Rules",
     "sourceFiles": [
-        "src/wclasses.c"
+        "src/wrules.c"
     ]
 }
