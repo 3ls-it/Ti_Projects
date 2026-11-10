@@ -1,0 +1,14 @@
+{
+    "additionalFiles": [
+    ],
+    "formatVersion": 1,
+    "gasFiles": [
+    ],
+    "headerFiles": [
+        "include/class_types.h"
+    ],
+    "name": "Wolfram_Classes",
+    "sourceFiles": [
+        "src/wclasses.c"
+    ]
+}

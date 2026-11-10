@@ -1,0 +1,72 @@
+run_ca()
+Prgm
+(c)Lets user choose CA
+(c)then run
+
+Local n,i,x,y,p,q,r
+local key,row,new
+
+(c)Set graph screen native res
+RclGDB lib/ntvres
+
+(c)Update rule names here
+(c)in list 'can'
+
+Dialog
+ Title "Choose Rule"
+ DropDown "Rule",can,n
+EndDialog
+
+If ok=0:Goto end
+
+newList(158)->new
+newList(158)->row
+
+(c) Single-cell
+(c) initial condition
+1->row[79]
+PxlOn 1.79
+
+(c) Run rules
+Lbl run
+
+0->key
+
+For y,2,75
+ For x,2,157
+  getKey()->key
+  If key!=0:Goto save
+  (c)get p, q & r
+  row[x-1]->p
+  row[x]->q
+  row[x+1]->r
+
+  (c)select rule
+  If n=1 Then
+   (c) rule 22
+   mod(p+q+r+p*q*r, 2)->i
+  ElseIf n=2 Then
+   (c) rule 30
+   mod(p+q+r+q*r, 2)->i
+  ElseIf n=3
+   (c) rule 110
+   mod(q*r*(1+p)+q+r, 2)->i
+  EndIf
+
+  (c)turn pixel on
+  If i=1 Then
+   PxlOn y,x
+   1->new[x]
+  EndIf
+ EndFor
+ new->row
+ newList(158)->new
+EndFor
+
+(c)Save
+Lbl save
+Pause
+savepic()
+
+Lbl end
+EndPrgm
