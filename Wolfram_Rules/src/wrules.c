@@ -1,5 +1,5 @@
 /*
- * @file    src/wclasses.c
+ * @file    src/wrules.c
  * @brief   Wolfram cellular automata rules.
  *
  * This file is part of Wolfram Rules.
