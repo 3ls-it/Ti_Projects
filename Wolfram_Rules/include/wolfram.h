@@ -8,3 +8,19 @@
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
+
+typedef unsigned char uchar;
+
+typedef struct {
+    uchar number;
+    const char *name;
+} WolframRule;
+
+uchar wolfram_next(uchar rule,
+                   uchar left,
+                   uchar center,
+                   uchar right);
+
+extern const WolframRule wolfram_rules[];
+extern const unsigned short wolfram_rule_count;
+

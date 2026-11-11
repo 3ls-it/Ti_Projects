@@ -9,8 +9,6 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-typedef unsigned char uchar;
-
 #define SAVE_SCREEN
 #define MIN_AMS 100
 #define USE_TI89
@@ -21,6 +19,7 @@ typedef unsigned char uchar;
 #define WORLD_HEIGHT 99
 #define WORLD_X_MAX (WORLD_WIDTH - 1)
 #define WORLD_Y_MAX (WORLD_HEIGHT - 1)
+
 #define HORIZONTAL_MARGIN (WORLD_HEIGHT - 1)
 #define SIM_WIDTH (WORLD_WIDTH + (2 * HORIZONTAL_MARGIN))
 #define SIM_X_MAX (SIM_WIDTH - 1)
@@ -33,9 +32,20 @@ typedef unsigned char uchar;
 #include <stdlib.h>
 #include <string.h>
 
+#include "../include/wolfram.h"
+
 static uchar ROW[SIM_WIDTH];
 static uchar NEW[SIM_WIDTH];
 
+const WolframRule wolfram_rules[] = {
+    { 22,  "Rule 22"  },
+    { 30,  "Rule 30"  },
+    { 90,  "Rule 90"  },
+    { 110, "Rule 110" }
+};
+
+const unsigned short wolfram_rule_count =
+    sizeof(wolfram_rules) / sizeof(wolfram_rules[0]);
 
 
 
@@ -53,45 +63,68 @@ draw_border(void)
 
 
 // Display Start screen
-void
+uchar
 start_screen(void)
 {
+	char buf[16];
+    buf[0] = '\0';
+	short len = 0;
+    short key;
+    uchar num;
+
 	draw_border();
 	FontSetSys(F_8x10);
 	DrawStr(27, 10, "Wolfram Rules", A_REPLACE);
-	return;
+    FontSetSys(F_4x6);
+    printf_xy(5, 30, "Rule number (e.g. 110): ");
+
+    while (1)
+    {
+        key = ngetchx();
+
+        if (key == KEY_ENTER)
+            break;
+
+        if (key == KEY_CLEAR && len > 0)
+        {
+            len--;
+            buf[len] = '\0';
+        }
+        else if (key >= '0' && key <= '9' && len < 15)
+        {
+            buf[len++] = (char)key;
+            buf[len] = '\0';
+        }
+
+        clrscr();
+		draw_border();
+		FontSetSys(F_8x10);
+		DrawStr(27, 10, "Wolfram Rules", A_REPLACE);
+		FontSetSys(F_4x6);
+		printf_xy(5, 30, "Rule number (e.g. 110): %s", buf);
+    }
+
+    num = (uchar) atoi(buf);
+    if (num <= 0 || num > 255)
+    {
+        return 30;
+    } else return num;
 }
 
 
-// Rule 22
+// Apply rule
 uchar
-rule_22(uchar p, uchar q, uchar r)
+wolfram_next(uchar rule,
+			 uchar left,
+			 uchar center,
+			 uchar right)
 {
-	return (p+q+r+p*q*r) % 2;
-}
+    uchar neighborhood;
+	neighborhood = (left << 2) |
+				   (center << 1) |
+				   right;
 
-
-// Rule 30
-uchar
-rule_30(uchar p, uchar q, uchar r)
-{
-	return (p+q+r+q*r) % 2;
-}
-
-
-// Rule 90 
-uchar
-rule_90(uchar p, uchar q, uchar r)
-{
-	return (p + r) % 2;
-}
-
-
-// Rule 110
-uchar
-rule_110(uchar p, uchar q, uchar r)
-{
-	return (q*r*(1+p)+q+r) % 2;
+	return (rule >> neighborhood) & 1;
 }
 
 
@@ -107,13 +140,12 @@ _main(void)
 	memset(ROW, 0, sizeof ROW);
 	memset(NEW, 0, sizeof NEW);
 
-	//Set rule here for testing
-	rule_num = 30; 
+	//Set rule here
+	rule_num = start_screen();
 
-	start_screen();
 	FontSetSys(F_6x8);
 	printf_xy(5, 40, "Rule:");
-	printf_xy(5, 50, "Test %u", rule_num);
+	printf_xy(5, 50, "%u", rule_num);
 	FontSetSys(F_4x6);
 	printf_xy(5, 80, "(Press any key to continue)");
 	ngetchx();
@@ -143,25 +175,7 @@ _main(void)
 			else
 				r = ROW[x + 1];
 
-			switch (rule_num)
-			{
-				case 30:
-					i = rule_30(p, q, r);
-					break;
-				case 22:
-					i = rule_22(p, q, r);
-					break;
-				case 90:
-					i = rule_90(p, q, r);
-					break;
-				case 110:
-					i = rule_110(p, q, r);
-					break;
-				default:
-					printf_xy(2, 2, "No rule");
-					ngetchx();
-					return;
-			}
+			i = wolfram_next(rule_num, p, q, r);
 
 			NEW[x] = i ? 1 : 0;
 
