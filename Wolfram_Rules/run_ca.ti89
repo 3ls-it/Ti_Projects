@@ -25,7 +25,7 @@ newList(158)->row
 (c) Single-cell
 (c) initial condition
 1->row[79]
-PxlOn 1.79
+PxlOn 1,79
 
 (c) Run rules
 Lbl run

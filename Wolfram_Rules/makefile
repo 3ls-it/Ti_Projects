@@ -5,7 +5,7 @@ RM      = rm -f
 
 default: wrules
 
-life:
+wrules:
 	$(CC) -v -o wrules src/wrules.c
 
 clean:

@@ -5,7 +5,7 @@
     "gasFiles": [
     ],
     "headerFiles": [
-        "include/rule_types.h"
+        "include/wolfram.h"
     ],
     "name": "Wolfram_Rules",
     "sourceFiles": [
