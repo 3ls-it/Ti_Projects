@@ -67,48 +67,48 @@ uchar
 start_screen(void)
 {
 	char buf[16];
-    buf[0] = '\0';
+	buf[0] = '\0';
 	short len = 0;
-    short key;
-    uchar num;
+	short key;
+	uchar num;
 
 	draw_border();
 	FontSetSys(F_8x10);
 	DrawStr(27, 10, "Wolfram Rules", A_REPLACE);
-    FontSetSys(F_4x6);
-    printf_xy(5, 30, "Rule number (e.g. 110): ");
+	FontSetSys(F_4x6);
+	printf_xy(5, 30, "Rule number (e.g. 110): ");
 
-    while (1)
-    {
-        key = ngetchx();
+	while (1)
+	{
+		key = ngetchx();
 
-        if (key == KEY_ENTER)
-            break;
+		if (key == KEY_ENTER)
+			break;
 
-        if (key == KEY_CLEAR && len > 0)
-        {
-            len--;
-            buf[len] = '\0';
-        }
-        else if (key >= '0' && key <= '9' && len < 15)
-        {
-            buf[len++] = (char)key;
-            buf[len] = '\0';
-        }
+		if (key == KEY_CLEAR && len > 0)
+		{
+			len--;
+			buf[len] = '\0';
+		}
+		else if (key >= '0' && key <= '9' && len < 15)
+		{
+			buf[len++] = (char)key;
+			buf[len] = '\0';
+		}
 
-        clrscr();
+		clrscr();
 		draw_border();
 		FontSetSys(F_8x10);
 		DrawStr(27, 10, "Wolfram Rules", A_REPLACE);
 		FontSetSys(F_4x6);
 		printf_xy(5, 30, "Rule number (e.g. 110): %s", buf);
-    }
+	}
 
-    num = (uchar) atoi(buf);
-    if (num <= 0 || num > 255)
-    {
-        return 30;
-    } else return num;
+	num = (uchar) atoi(buf);
+	if (num <= 0 || num > 255)
+	{
+		return 30;
+	} else return num;
 }
 
 
