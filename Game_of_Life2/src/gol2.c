@@ -23,6 +23,7 @@
 #define HASH_SIZE 4096
 #define HASH_MASK (HASH_SIZE - 1)
 
+
 #include <args.h>
 #include <estack.h>
 #include <graph.h>
@@ -41,6 +42,7 @@
 #include "../include/p80_gliderless_hwss.h"
 #include "../include/wing_spaceship.h"
 #include "../include/p43_gliderloop.h"
+#include "../include/p24_glidergun2022.h"
 
 
 static WorldCell cells_a[MAX_CELLS];
@@ -414,6 +416,13 @@ select_pattern(void)
         selected_pattern_count = SNARK_LOOP_COUNT;
 		display_name = "Snark Loop";
     }
+	else if (strcmp(name, "p24_gg_2022") == 0)
+    {
+        selected_pattern = p24glidergun2022;
+        selected_pattern_count = P24GLIDERGUN2022_COUNT;
+		display_name = "Period 24 Glider Gun, 2022";
+    }
+
 }
 
 
